@@ -7821,7 +7821,6 @@ a.anchor-link {
 <li>Evaluación en las imágenes de prueba</li>
 <li>Análisis de resultados</li>
 <li>Uso de herramientas de IA generativa</li>
-<li>Guion del video</li>
 <li>Bonos</li>
 </ol>
 </div>
@@ -12133,82 +12132,6 @@ recomendación de β y λ?</p>
 </li>
 <li><strong>¿Por qué la IAG no podía anticipar el comportamiento del método en nuestras imágenes?</strong> Porque solo tenía una descripción en palabras y no las imágenes. Su recomendación sale de reglas generales sobre dermatoscopia y K-medias, pero el resultado depende de cosas que no se pueden describir con precisión: el contraste real entre lesión y piel en cada foto, si la lesión tiene un halo claro o no, cuánto viñeteado y cuántos pelos hay, y qué tan pequeña es la lesión (3 % del área en ISIC_0000114). La mejor K cambia de una imagen a otra (entre 3 y 8 en la tabla "oráculo" de la sección 6), y eso solo se sabe ejecutando el método. Por eso cualquier recomendación de la IAG hay que probarla con las imágenes de ajuste antes de usarla. Lo hicimos sin tocar las imágenes de prueba y mantuvimos nuestra configuración final, porque ninguna recomendación la superó en el Dice promedio.</li>
 </ul>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=guion-video">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="8.-Guion-del-video">8. Guion del video<a class="anchor-link" href="#8.-Guion-del-video">¶</a></h2><p>Video de <strong>2:45</strong>, dirigido a DermAlpes y a un público no especializado. Hablan Julian (J) y Juan Esteban (E); cada bloque indica qué se muestra en pantalla.</p>
-<table>
-<thead>
-<tr>
-<th style="text-align:center">Tiempo</th>
-<th style="text-align:center">Habla</th>
-<th style="text-align:left">En pantalla</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:center">0:00 – 0:20</td>
-<td style="text-align:center">J</td>
-<td style="text-align:left">Una imagen de dermatoscopio con la lesión</td>
-</tr>
-<tr>
-<td style="text-align:center">0:20 – 0:50</td>
-<td style="text-align:center">E</td>
-<td style="text-align:left">Imagen original → grupos de K-medias pintados por color</td>
-</tr>
-<tr>
-<td style="text-align:center">0:50 – 1:15</td>
-<td style="text-align:center">J</td>
-<td style="text-align:left">Máscara estimada sobre la imagen (contorno rojo)</td>
-</tr>
-<tr>
-<td style="text-align:center">1:15 – 1:45</td>
-<td style="text-align:center">E</td>
-<td style="text-align:left">Tabla de prueba y comparación ajuste vs. prueba</td>
-</tr>
-<tr>
-<td style="text-align:center">1:45 – 2:15</td>
-<td style="text-align:center">J</td>
-<td style="text-align:left">ISIC_0000110 e ISIC_0000123 (casos de fallo)</td>
-</tr>
-<tr>
-<td style="text-align:center">2:15 – 2:45</td>
-<td style="text-align:center">E</td>
-<td style="text-align:left">Sección de riesgos y recomendaciones</td>
-</tr>
-</tbody>
-</table>
-<p><strong>1. El problema (0:00 – 0:20) — Julian</strong></p>
-<blockquote>
-<p>Hola, somos Julian y Juan Esteban. DermAlpes recibe fotos de lesiones de piel desde municipios pequeños para que un dermatólogo las revise a distancia. Nos pidieron una herramienta que marque automáticamente dónde está la lesión en la foto, para que el especialista pueda medirla. Ojo: no diagnostica, solo delimita.</p>
-</blockquote>
-<p><strong>2. Cómo funciona (0:20 – 0:50) — Juan Esteban</strong></p>
-<blockquote>
-<p>No teníamos fotos etiquetadas de pacientes propios, así que usamos un método que no necesita ejemplos: K-medias. Cada píxel se describe por su color y su posición en la foto, y el algoritmo los junta en grupos parecidos. El número de grupos lo escoge solo, con una medida llamada silueta. Al final casi siempre quedan dos grupos: la piel y la parte más oscura.</p>
-</blockquote>
-<p><strong>3. De los grupos a la máscara (0:50 – 1:15) — Julian</strong></p>
-<blockquote>
-<p>Los grupos no dicen cuál es la lesión, así que definimos una regla: la lesión es el grupo oscuro que no está pegado al borde de la foto, porque las esquinas del dermatoscopio también salen negras. Después limpiamos pelos y puntos sueltos, y nos quedamos con la mancha principal.</p>
-</blockquote>
-<p><strong>4. Resultados (1:15 – 1:45) — Juan Esteban</strong></p>
-<blockquote>
-<p>Ajustamos todo con 15 fotos y lo probamos sin cambios en 5 fotos nuevas. La coincidencia con la máscara de los dermatólogos fue de 0,87 sobre 1, casi igual que en el ajuste. Cuando la herramienta marca algo como lesión, casi siempre acierta, pero se le escapa en promedio cerca del 20 % de la lesión, sobre todo los bordes claros.</p>
-</blockquote>
-<p><strong>5. Dónde falla (1:45 – 2:15) — Julian</strong></p>
-<blockquote>
-<p>Falla en lesiones rosadas o poco pigmentadas, como esta, donde solo marcó el centro. También en bordes que cambian de color poco a poco, y cuando hay enrojecimiento alrededor, que lo confunde con la lesión. Es lógico: el método solo ve color y posición, no forma ni textura.</p>
-</blockquote>
-<p><strong>6. Precauciones (2:15 – 2:45) — Juan Esteban</strong></p>
-<blockquote>
-<p>Por eso recomendamos usar la máscara solo como una sugerencia que el dermatólogo puede corregir. Si marca menos de la cuenta, la lesión parece más pequeña de lo que es. Además, las fotos con que lo probamos son casi todas de piel clara: antes de usarlo con pacientes de piel más oscura o con otros equipos, hay que validarlo con fotos propias de DermAlpes. Gracias.</p>
-</blockquote>
 </div>
 </div>
 </div>
