@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ejercicio de síntesis – Perceptrón Multicapa (MNIST)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #ffffff;
+      --bg2:       #f8f7f4;
+      --bg3:       #f0ede8;
+      --bg-info:   #e6f1fb;
+      --bg-warn:   #faeeda;
+      --bg-teal:   #e1f5ee;
+      --bg-purple: #eeedfe;
+      --t1:        #1a1a18;
+      --t2:        #5f5e5a;
+      --t3:        #888780;
+      --t-info:    #185fa5;
+      --t-teal:    #0f6e56;
+      --t-warn:    #633806;
+      --t-purple:  #3c3489;
+      --border:    rgba(0,0,0,0.11);
+      --border2:   rgba(0,0,0,0.20);
+      --accent:    #378add;
+      --r-md: 8px;
+      --r-lg: 12px;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono: 'Fira Code', 'Cascadia Code', Consolas, monospace;
+      --sidebar-w: 250px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:        #1c1c1a;
+        --bg2:       #252523;
+        --bg3:       #2e2e2b;
+        --bg-info:   #0c2d4a;
+        --bg-warn:   #3a2800;
+        --bg-teal:   #04342c;
+        --bg-purple: #26215c;
+        --t1:        #f0ede6;
+        --t2:        #b4b2a9;
+        --t3:        #888780;
+        --t-info:    #85b7eb;
+        --t-teal:    #5dcaa5;
+        --t-warn:    #fac775;
+        --t-purple:  #afa9ec;
+        --border:    rgba(255,255,255,0.09);
+        --border2:   rgba(255,255,255,0.16);
+        --accent:    #5a9fd4;
+      }
+    }
+
+    body { font-family: var(--sans); background: var(--bg); color: var(--t1); display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0; border-right: 0.5px solid var(--border);
+      padding: 1.5rem 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--bg2);
+    }
+    .sidebar-logo { padding: 0 1.25rem 1.25rem; border-bottom: 0.5px solid var(--border); margin-bottom: 1rem; }
+    .sidebar-logo .logo-label { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--t3); margin-bottom: 4px; }
+    .sidebar-logo .logo-title { font-size: 13px; font-weight: 500; color: var(--t1); line-height: 1.4; }
+    .sidebar-section { padding: 0.25rem 0 0.85rem; }
+    .sidebar-section-label { font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; color: var(--t3); padding: 0 1.25rem; margin-bottom: 5px; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 6px 1.25rem; font-size: 13px; color: var(--t2); cursor: pointer; line-height: 1.4; border: none; background: none; width: 100%; text-align: left; transition: background 0.1s; }
+    .nav-item i { font-size: 15px; flex-shrink: 0; color: var(--t3); }
+    .nav-item:hover { background: var(--bg3); color: var(--t1); }
+    .nav-item.active { background: var(--bg-info); color: var(--t-info); font-weight: 500; }
+    .nav-item.active i { color: var(--t-info); }
+    .nav-indent { padding-left: 2.5rem; }
+
+    .main { flex: 1; min-width: 0; padding: 2.5rem 3rem; max-width: 780px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .breadcrumb { font-size: 12px; color: var(--t3); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 6px; }
+    h1 { font-size: 26px; font-weight: 500; margin-bottom: 0.4rem; line-height: 1.3; }
+    h2 { font-size: 19px; font-weight: 500; margin: 2rem 0 0.75rem; }
+    .page-meta { font-size: 13px; color: var(--t3); margin-bottom: 2rem; display: flex; align-items: center; gap: 8px; }
+    p { font-size: 14px; color: var(--t2); line-height: 1.75; margin-bottom: 1rem; }
+    p strong { font-weight: 500; color: var(--t1); }
+    hr { border: none; border-top: 0.5px solid var(--border); margin: 2rem 0; }
+
+    .callout { border-radius: 0 var(--r-md) var(--r-md) 0; padding: 1rem 1.25rem; margin: 1.25rem 0; font-size: 14px; line-height: 1.65; }
+    .callout-info   { background: var(--bg-info);   border-left: 3px solid var(--accent); color: var(--t-info); }
+    .callout-warn   { background: var(--bg-warn);   border-left: 3px solid #ef9f27;       color: var(--t-warn); }
+    .callout-teal   { background: var(--bg-teal);   border-left: 3px solid #1d9e75;       color: var(--t-teal); }
+    .callout-purple { background: var(--bg-purple); border-left: 3px solid #7f77dd;       color: var(--t-purple); }
+    .callout strong { font-weight: 500; color: inherit; }
+
+    .step-list { margin: 1.5rem 0; }
+    .step-item { display: flex; gap: 16px; margin-bottom: 1.4rem; align-items: flex-start; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-info); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; flex-shrink: 0; color: var(--t-info); }
+    .step-body { flex: 1; padding-top: 2px; }
+    .step-title { font-size: 15px; font-weight: 500; color: var(--t1); margin-bottom: 3px; }
+    .step-desc  { font-size: 14px; color: var(--t2); line-height: 1.65; }
+    .step-refs { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .ref-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--t-purple); background: var(--bg-purple); border: none; border-radius: var(--r-md); padding: 3px 9px; cursor: pointer; font-family: var(--sans); }
+    .ref-chip:hover { text-decoration: underline; }
+    .ref-chip i { font-size: 13px; }
+
+    .code-wrap { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--r-md); margin: 1rem 0; overflow: hidden; }
+    .code-header { padding: 6px 14px; border-bottom: 0.5px solid var(--border); font-size: 11px; color: var(--t3); display: flex; align-items: center; gap: 6px; font-family: var(--mono); }
+    pre { padding: 1rem; font-family: var(--mono); font-size: 12.5px; line-height: 1.75; color: var(--t1); overflow-x: auto; margin: 0; }
+    .ck { color: #185fa5; } .cf { color: #0f6e56; } .cs { color: #854f0b; } .cc { color: var(--t3); }
+    @media (prefers-color-scheme: dark) { .ck { color: #85b7eb; } .cf { color: #5dcaa5; } .cs { color: #fac775; } }
+
+    code { font-family: var(--mono); font-size: 12px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 4px; padding: 1px 5px; color: var(--t1); }
+
+    .intro-card { border: 0.5px solid var(--border); border-radius: var(--r-lg); padding: 1.25rem 1.5rem; margin: 1.25rem 0 1.5rem; background: var(--bg2); }
+    .intro-card p:last-child { margin-bottom: 0; }
+
+    .ref-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 1rem 0; }
+    .ref-table th { text-align: left; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--t3); padding: 6px 10px; border-bottom: 0.5px solid var(--border); }
+    .ref-table td { padding: 8px 10px; border-bottom: 0.5px solid var(--border); color: var(--t2); vertical-align: top; line-height: 1.5; }
+    .ref-table td:first-child { color: var(--t1); font-weight: 500; white-space: nowrap; }
+
+    .gloss-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 1.25rem 0; }
+    .gloss-card { border: 0.5px solid var(--border); border-radius: var(--r-md); padding: 0.9rem 1rem; cursor: pointer; background: var(--bg); text-align: left; font-family: var(--sans); }
+    .gloss-card:hover { background: var(--bg2); border-color: var(--border2); }
+    .gloss-card .gc-title { font-size: 14px; font-weight: 500; color: var(--t1); margin-bottom: 3px; display: flex; align-items: center; gap: 7px; }
+    .gloss-card .gc-title i { font-size: 16px; color: var(--t-purple); }
+    .gloss-card .gc-desc { font-size: 12.5px; color: var(--t2); line-height: 1.5; }
+
+    .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); margin-bottom: 0.75rem; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 0.5px solid var(--border); border-radius: var(--r-md); overflow: hidden; margin: 1rem 0; }
+    .grid-cell { background: var(--bg); padding: 0.875rem 1rem; }
+    .cell-label { font-size: 11px; color: var(--t3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+    .cell-val { font-size: 13px; color: var(--t2); line-height: 1.5; }
+
+    .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 0.5px solid var(--border); gap: 1rem; }
+    .page-nav-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--t2); border: 0.5px solid var(--border2); border-radius: var(--r-md); padding: 8px 14px; cursor: pointer; background: var(--bg); font-family: var(--sans); }
+    .page-nav-btn:hover { background: var(--bg2); }
+
+    @media (max-width: 680px) {
+      .sidebar { display: none; }
+      .main { padding: 1.5rem 1.25rem; }
+      .gloss-grid, .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-label">ISIS-2611</div>
+    <div class="logo-title">Perceptrón Multicapa · MNIST</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Actividad</div>
+    <button class="nav-item active" onclick="goTo('home', this)"><i class="ti ti-home"></i> Inicio</button>
+    <button class="nav-item" onclick="goTo('ej1', this)"><i class="ti ti-circle-1"></i> Ejercicio 1</button>
+    <button class="nav-item" onclick="goTo('ej2', this)"><i class="ti ti-circle-2"></i> Ejercicio 2</button>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Glosario</div>
+    <button class="nav-item" onclick="goTo('glosario', this)"><i class="ti ti-list-search"></i> Índice</button>
+    <button class="nav-item nav-indent" onclick="goTo('g-mnist', this)">Dataset MNIST</button>
+    <button class="nav-item nav-indent" onclick="goTo('g-prep', this)">Normalizar y aplanar</button>
+    <button class="nav-item nav-indent" onclick="goTo('g-model', this)">keras.Sequential</button>
+    <button class="nav-item nav-indent" onclick="goTo('g-compile', this)">compile y fit</button>
+    <button class="nav-item nav-indent" onclick="goTo('g-eval', this)">Evaluación</button>
+    <button class="nav-item nav-indent" onclick="goTo('g-predict', this)">Visualizar predicciones</button>
+    <button class="nav-item nav-indent" onclick="goTo('g-dropout', this)">Dropout y L2</button>
+    <button class="nav-item nav-indent" onclick="goTo('g-early', this)">EarlyStopping</button>
+    <button class="nav-item nav-indent" onclick="goTo('g-checkpoint', this)">ModelCheckpoint</button>
+  </div>
+</nav>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="main">
+
+  <!-- ──────── HOME ──────── -->
+  <div class="page active" id="home">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Redes neuronales <i class="ti ti-chevron-right"></i> Ejercicio de síntesis</div>
+    <h1>Ejercicio de síntesis – Perceptrón Multicapa</h1>
+    <div class="page-meta"><i class="ti ti-clock"></i> Taller ISIS-2611 · Aprendizaje de Máquina · TensorFlow/Keras</div>
+
+    <p>Esta actividad consta de <strong>dos ejercicios</strong> sobre el dataset <strong>MNIST</strong> de dígitos manuscritos. En el primero construyes un MLP base que clasifique los 10 dígitos; en el segundo lo optimizas para que generalice mejor.</p>
+
+    <div class="callout callout-purple">
+      <strong>Cómo está organizado:</strong> los <strong>Ejercicios</strong> describen únicamente <em>qué</em> hacer, paso a paso. Todo el código, los conceptos y los tips viven en el <strong>Glosario</strong>, explicados de forma genérica. Cada paso enlaza a las entradas del glosario que necesitas.
+    </div>
+
+    <div class="grid-2" style="margin-top:1.5rem">
+      <div class="grid-cell">
+        <div class="cell-label">Ejercicio 1</div>
+        <div class="cell-val">Modelo base: un MLP que clasifique los 10 dígitos de MNIST</div>
+      </div>
+      <div class="grid-cell">
+        <div class="cell-label">Ejercicio 2</div>
+        <div class="cell-val">Modelo optimizado: regularización y callbacks para mejorar la generalización</div>
+      </div>
+    </div>
+
+    <div class="page-nav">
+      <span></span>
+      <button class="page-nav-btn" onclick="goTo('ej1', null)">Comenzar: Ejercicio 1 <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── EJERCICIO 1 ──────── -->
+  <div class="page" id="ej1">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Actividad <i class="ti ti-chevron-right"></i> Ejercicio 1</div>
+    <h1>Ejercicio 1 — Modelo base (baseline)</h1>
+    <div class="page-meta"><i class="ti ti-circle-1"></i> Clasificación de 10 dígitos con un MLP</div>
+
+    <div class="intro-card">
+      <p><strong>Sobre el dataset.</strong> MNIST contiene 70.000 imágenes en escala de grises de 28×28 píxeles, cada una con un dígito manuscrito del 0 al 9. Viene ya dividido en 60.000 imágenes de entrenamiento y 10.000 de prueba. Es el problema clásico para introducir clasificación multiclase con redes neuronales.</p>
+      <p><strong>Meta.</strong> Construye y entrena un perceptrón multicapa que reciba cada imagen aplanada (784 valores) y prediga uno de los 10 dígitos. Elige libremente las capas ocultas y la función de activación, y reporta tu accuracy de prueba.</p>
+    </div>
+
+    <h2>Pasos</h2>
+    <div class="step-list">
+
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Carga MNIST</div>
+          <div class="step-desc">Obtén los conjuntos de entrenamiento y prueba ya separados, y visualiza algunas imágenes para reconocer los datos.</div>
+          <div class="step-refs"><button class="ref-chip" onclick="goTo('g-mnist', null)"><i class="ti ti-book"></i> Dataset MNIST</button></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Normaliza y aplana las imágenes</div>
+          <div class="step-desc">Lleva los valores de píxel al rango [0, 1] y convierte cada imagen 28×28 en un vector que el MLP pueda recibir.</div>
+          <div class="step-refs"><button class="ref-chip" onclick="goTo('g-prep', null)"><i class="ti ti-book"></i> Normalizar y aplanar</button></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Define la arquitectura del MLP</div>
+          <div class="step-desc">Arma un modelo secuencial con una o más capas ocultas densas y una capa de salida de 10 neuronas con softmax. Anota tu elección y por qué.</div>
+          <div class="step-refs"><button class="ref-chip" onclick="goTo('g-model', null)"><i class="ti ti-book"></i> keras.Sequential</button></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Compila y entrena</div>
+          <div class="step-desc">Configura optimizador, función de pérdida y métrica; entrena reservando una fracción de validación.</div>
+          <div class="step-refs"><button class="ref-chip" onclick="goTo('g-compile', null)"><i class="ti ti-book"></i> compile y fit</button></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Evalúa el desempeño</div>
+          <div class="step-desc">Reporta accuracy de prueba, matriz de confusión y las curvas de accuracy/pérdida del entrenamiento. Inspecciona visualmente algunos aciertos y errores.</div>
+          <div class="step-refs">
+            <button class="ref-chip" onclick="goTo('g-eval', null)"><i class="ti ti-book"></i> Evaluación</button>
+            <button class="ref-chip" onclick="goTo('g-predict', null)"><i class="ti ti-book"></i> Visualizar predicciones</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <h2>Entregable</h2>
+    <p>Un notebook con la arquitectura elegida y su justificación, las curvas de entrenamiento, el reporte de clasificación, la matriz de confusión y una muestra de dígitos con sus predicciones.</p>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('home', null)"><i class="ti ti-arrow-left"></i> Inicio</button>
+      <button class="page-nav-btn" onclick="goTo('ej2', null)">Ejercicio 2 <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── EJERCICIO 2 ──────── -->
+  <div class="page" id="ej2">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Actividad <i class="ti ti-chevron-right"></i> Ejercicio 2</div>
+    <h1>Ejercicio 2 — Modelo optimizado</h1>
+    <div class="page-meta"><i class="ti ti-circle-2"></i> Regularización y callbacks</div>
+
+    <div class="intro-card">
+      <p><strong>Punto de partida.</strong> Reutiliza el mismo MNIST y parte del modelo base del Ejercicio 1. El objetivo ya no es solo subir el accuracy de entrenamiento, sino lograr que el modelo <strong>generalice</strong> mejor a las imágenes de prueba y evitar que memorice el entrenamiento.</p>
+      <p><strong>Meta.</strong> Entrena un modelo mejorado aplicando al menos un mecanismo de regularización y al menos un callback de entrenamiento, y compáralo cuantitativamente contra el modelo base.</p>
+    </div>
+
+    <h2>Pasos</h2>
+    <div class="step-list">
+
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Agrega regularización</div>
+          <div class="step-desc">Incorpora capas de Dropout (y opcionalmente penalización L2) a tu arquitectura para reducir el sobreajuste. Puedes hacer la red más profunda.</div>
+          <div class="step-refs"><button class="ref-chip" onclick="goTo('g-dropout', null)"><i class="ti ti-book"></i> Dropout y L2</button></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Activa early stopping</div>
+          <div class="step-desc">Detén el entrenamiento cuando la pérdida de validación deje de mejorar; así puedes permitir más épocas sin riesgo.</div>
+          <div class="step-refs"><button class="ref-chip" onclick="goTo('g-early', null)"><i class="ti ti-book"></i> EarlyStopping</button></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Guarda el mejor modelo</div>
+          <div class="step-desc">Usa un checkpoint para conservar automáticamente los pesos de la mejor época según la validación.</div>
+          <div class="step-refs"><button class="ref-chip" onclick="goTo('g-checkpoint', null)"><i class="ti ti-book"></i> ModelCheckpoint</button></div>
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Compara y concluye</div>
+          <div class="step-desc">Arma una tabla con el accuracy de entrenamiento y de prueba del modelo base y del optimizado. Indica cuál generaliza mejor y por qué, apoyándote en las curvas de entrenamiento.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <h2>Entregable</h2>
+    <p>La tabla comparativa train/test de ambos modelos, las curvas de entrenamiento lado a lado, la justificación de los mecanismos elegidos y una conclusión sobre la generalización.</p>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('ej1', null)"><i class="ti ti-arrow-left"></i> Ejercicio 1</button>
+      <button class="page-nav-btn" onclick="goTo('glosario', null)">Glosario <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO ÍNDICE ──────── -->
+  <div class="page" id="glosario">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> Índice</div>
+    <h1>Glosario</h1>
+    <div class="page-meta"><i class="ti ti-list-search"></i> Conceptos, código y tips genéricos</div>
+    <p>Cada entrada explica un concepto de forma general —independiente de esta actividad— con su código de referencia en TensorFlow/Keras. Úsalas como apoyo mientras resuelves los ejercicios.</p>
+
+    <div class="gloss-grid">
+      <button class="gloss-card" onclick="goTo('g-mnist', null)"><div class="gc-title"><i class="ti ti-photo"></i> Dataset MNIST</div><div class="gc-desc">Dígitos manuscritos 28×28, 10 clases</div></button>
+      <button class="gloss-card" onclick="goTo('g-prep', null)"><div class="gc-title"><i class="ti ti-arrows-minimize"></i> Normalizar y aplanar</div><div class="gc-desc">Escalar píxeles y vectorizar imágenes</div></button>
+      <button class="gloss-card" onclick="goTo('g-model', null)"><div class="gc-title"><i class="ti ti-stack-2"></i> keras.Sequential</div><div class="gc-desc">Definir capas densas del MLP</div></button>
+      <button class="gloss-card" onclick="goTo('g-compile', null)"><div class="gc-title"><i class="ti ti-player-play"></i> compile y fit</div><div class="gc-desc">Optimizador, pérdida y entrenamiento</div></button>
+      <button class="gloss-card" onclick="goTo('g-eval', null)"><div class="gc-title"><i class="ti ti-chart-bar"></i> Evaluación</div><div class="gc-desc">Accuracy, matriz de confusión, curvas</div></button>
+      <button class="gloss-card" onclick="goTo('g-predict', null)"><div class="gc-title"><i class="ti ti-eye"></i> Visualizar predicciones</div><div class="gc-desc">Mostrar dígitos con su predicción</div></button>
+      <button class="gloss-card" onclick="goTo('g-dropout', null)"><div class="gc-title"><i class="ti ti-droplet-off"></i> Dropout y L2</div><div class="gc-desc">Regularizar para generalizar mejor</div></button>
+      <button class="gloss-card" onclick="goTo('g-early', null)"><div class="gc-title"><i class="ti ti-player-stop"></i> EarlyStopping</div><div class="gc-desc">Detener el entrenamiento a tiempo</div></button>
+      <button class="gloss-card" onclick="goTo('g-checkpoint', null)"><div class="gc-title"><i class="ti ti-device-floppy"></i> ModelCheckpoint</div><div class="gc-desc">Guardar el mejor modelo</div></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO: MNIST ──────── -->
+  <div class="page" id="g-mnist">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> Dataset MNIST</div>
+    <h1>Dataset MNIST</h1>
+    <div class="page-meta"><i class="ti ti-photo"></i> Datos</div>
+
+    <p>MNIST es un conjunto de 70.000 imágenes en escala de grises de 28×28 píxeles, cada una con un dígito manuscrito (0–9). Keras lo incluye y lo entrega ya dividido en entrenamiento (60.000) y prueba (10.000), por lo que no necesitas hacer la partición manualmente.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python</div>
+      <pre><span class="ck">from</span> tensorflow <span class="ck">import</span> keras
+<span class="ck">import</span> matplotlib.pyplot <span class="ck">as</span> plt
+
+(X_train, y_train), (X_test, y_test) = keras.datasets.mnist.<span class="cf">load_data</span>()
+
+<span class="cf">print</span>(X_train.shape)   <span class="cc"># (60000, 28, 28)</span>
+<span class="cf">print</span>(y_train[<span class="cs">0</span>])      <span class="cc"># etiqueta: un entero 0-9</span>
+
+plt.<span class="cf">imshow</span>(X_train[<span class="cs">0</span>], cmap=<span class="cs">'gray'</span>); plt.<span class="cf">show</span>()</pre>
+    </div>
+
+    <table class="ref-table">
+      <tr><th>Elemento</th><th>Forma / tipo</th></tr>
+      <tr><td>X (imágenes)</td><td>Arreglo <code>(n, 28, 28)</code>, valores 0–255</td></tr>
+      <tr><td>y (etiquetas)</td><td>Enteros 0–9, una clase por imagen</td></tr>
+      <tr><td>Clases</td><td>10 (multiclase)</td></tr>
+    </table>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('glosario', null)"><i class="ti ti-arrow-left"></i> Glosario</button>
+      <button class="page-nav-btn" onclick="goTo('g-prep', null)">Normalizar y aplanar <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO: Normalizar y aplanar ──────── -->
+  <div class="page" id="g-prep">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> Normalizar y aplanar</div>
+    <h1>Normalizar y aplanar</h1>
+    <div class="page-meta"><i class="ti ti-arrows-minimize"></i> Preprocesamiento</div>
+
+    <p><strong>Normalizar.</strong> Los píxeles vienen en el rango 0–255. Las redes entrenadas con descenso de gradiente convergen mejor cuando las entradas son pequeñas y de magnitud comparable, así que se dividen entre 255 para llevarlas a [0, 1]. Es el equivalente, en imágenes, a escalar las features.</p>
+    <p><strong>Aplanar.</strong> Un MLP recibe vectores, no matrices 2D. Cada imagen de 28×28 se convierte en un vector de 784 valores. En Keras esto se hace cómodamente con una capa <code>Flatten</code> dentro del propio modelo.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python</div>
+      <pre><span class="cc"># normalización 0-255 -> 0-1</span>
+X_train = X_train.<span class="cf">astype</span>(<span class="cs">'float32'</span>) / <span class="cs">255.0</span>
+X_test  = X_test.<span class="cf">astype</span>(<span class="cs">'float32'</span>) / <span class="cs">255.0</span>
+
+<span class="cc"># el aplanado se hace en la arquitectura:</span>
+<span class="cc"># layers.Flatten(input_shape=(28, 28))  ->  vector de 784</span></pre>
+    </div>
+
+    <div class="callout callout-warn"><strong>Nota:</strong> las etiquetas (0–9) pueden quedarse como enteros si usas la pérdida <code>sparse_categorical_crossentropy</code>. Solo necesitas one-hot si usas <code>categorical_crossentropy</code>.</div>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('g-mnist', null)"><i class="ti ti-arrow-left"></i> Dataset MNIST</button>
+      <button class="page-nav-btn" onclick="goTo('g-model', null)">keras.Sequential <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO: keras.Sequential ──────── -->
+  <div class="page" id="g-model">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> keras.Sequential</div>
+    <h1>keras.Sequential</h1>
+    <div class="page-meta"><i class="ti ti-stack-2"></i> Arquitectura del MLP</div>
+
+    <p>Un modelo secuencial apila capas una tras otra. Para un MLP sobre imágenes: una capa <code>Flatten</code> de entrada, una o más capas <code>Dense</code> ocultas con activación ReLU, y una capa <code>Dense</code> final con tantas neuronas como clases y activación <code>softmax</code> (que produce una distribución de probabilidad sobre las 10 clases).</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python</div>
+      <pre><span class="ck">from</span> tensorflow.keras <span class="ck">import</span> Sequential, layers
+
+model = <span class="cf">Sequential</span>([
+    layers.<span class="cf">Flatten</span>(input_shape=(<span class="cs">28</span>, <span class="cs">28</span>)),   <span class="cc"># entrada: 784</span>
+    layers.<span class="cf">Dense</span>(<span class="cs">128</span>, activation=<span class="cs">'relu'</span>),       <span class="cc"># capa oculta</span>
+    layers.<span class="cf">Dense</span>(<span class="cs">10</span>, activation=<span class="cs">'softmax'</span>)       <span class="cc"># salida: 10 clases</span>
+])
+model.<span class="cf">summary</span>()</pre>
+    </div>
+
+    <table class="ref-table">
+      <tr><th>Capa</th><th>Función</th></tr>
+      <tr><td><code>Flatten</code></td><td>Convierte la imagen 28×28 en un vector de 784</td></tr>
+      <tr><td><code>Dense(n, relu)</code></td><td>Capa oculta; más neuronas/capas = más capacidad</td></tr>
+      <tr><td><code>Dense(10, softmax)</code></td><td>Salida multiclase: probabilidad por dígito</td></tr>
+    </table>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('g-prep', null)"><i class="ti ti-arrow-left"></i> Normalizar y aplanar</button>
+      <button class="page-nav-btn" onclick="goTo('g-compile', null)">compile y fit <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO: compile y fit ──────── -->
+  <div class="page" id="g-compile">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> compile y fit</div>
+    <h1>compile y fit</h1>
+    <div class="page-meta"><i class="ti ti-player-play"></i> Entrenamiento</div>
+
+    <p><code>compile</code> configura cómo aprende el modelo: el optimizador (cómo actualiza los pesos), la función de pérdida (qué minimiza) y las métricas a monitorear. <code>fit</code> ejecuta el entrenamiento durante un número de épocas, y con <code>validation_split</code> aparta parte del entrenamiento para vigilar la generalización época a época.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python</div>
+      <pre>model.<span class="cf">compile</span>(
+    optimizer=keras.optimizers.<span class="cf">Adam</span>(learning_rate=<span class="cs">0.001</span>),
+    loss=<span class="cs">'sparse_categorical_crossentropy'</span>,   <span class="cc"># etiquetas enteras</span>
+    metrics=[<span class="cs">'accuracy'</span>]
+)
+
+history = model.<span class="cf">fit</span>(
+    X_train, y_train,
+    epochs=<span class="cs">15</span>,
+    batch_size=<span class="cs">128</span>,
+    validation_split=<span class="cs">0.2</span>     <span class="cc"># 20% del train para validación</span>
+)</pre>
+    </div>
+
+    <table class="ref-table">
+      <tr><th>Parámetro</th><th>Rol</th></tr>
+      <tr><td><code>optimizer</code></td><td>Adam es una elección robusta por defecto</td></tr>
+      <tr><td><code>loss</code></td><td><code>sparse_categorical_crossentropy</code> para etiquetas enteras multiclase</td></tr>
+      <tr><td><code>epochs</code></td><td>Pasadas completas sobre el entrenamiento</td></tr>
+      <tr><td><code>batch_size</code></td><td>Muestras por actualización de pesos</td></tr>
+      <tr><td><code>validation_split</code></td><td>Fracción del train reservada para validación</td></tr>
+    </table>
+
+    <div class="callout callout-info">El objeto <code>history</code> guarda accuracy y pérdida de train y validación por época — la base para graficar las curvas de entrenamiento.</div>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('g-model', null)"><i class="ti ti-arrow-left"></i> keras.Sequential</button>
+      <button class="page-nav-btn" onclick="goTo('g-eval', null)">Evaluación <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO: Evaluación ──────── -->
+  <div class="page" id="g-eval">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> Evaluación</div>
+    <h1>Evaluación del modelo</h1>
+    <div class="page-meta"><i class="ti ti-chart-bar"></i> Métricas</div>
+
+    <p>Tres ángulos complementarios: <code>evaluate</code> da el accuracy sobre el conjunto de prueba; <code>classification_report</code> y <code>confusion_matrix</code> detallan el desempeño por dígito; y las curvas del objeto <code>history</code> muestran si hubo sobreajuste durante el entrenamiento.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python</div>
+      <pre><span class="ck">import</span> numpy <span class="ck">as</span> np, seaborn <span class="ck">as</span> sns, matplotlib.pyplot <span class="ck">as</span> plt
+<span class="ck">from</span> sklearn.metrics <span class="ck">import</span> classification_report, confusion_matrix
+
+loss, acc = model.<span class="cf">evaluate</span>(X_test, y_test)
+<span class="cf">print</span>(<span class="cs">f"Accuracy de prueba: {acc:.4f}"</span>)
+
+y_pred = np.<span class="cf">argmax</span>(model.<span class="cf">predict</span>(X_test), axis=<span class="cs">1</span>)
+<span class="cf">print</span>(<span class="cf">classification_report</span>(y_test, y_pred))
+
+cm = <span class="cf">confusion_matrix</span>(y_test, y_pred)
+sns.<span class="cf">heatmap</span>(cm, annot=<span class="cs">True</span>, fmt=<span class="cs">'d'</span>, cmap=<span class="cs">'Blues'</span>); plt.<span class="cf">show</span>()</pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python · curvas de entrenamiento</div>
+      <pre>plt.<span class="cf">plot</span>(history.history[<span class="cs">'accuracy'</span>], label=<span class="cs">'train'</span>)
+plt.<span class="cf">plot</span>(history.history[<span class="cs">'val_accuracy'</span>], label=<span class="cs">'validación'</span>)
+plt.<span class="cf">xlabel</span>(<span class="cs">'Época'</span>); plt.<span class="cf">legend</span>(); plt.<span class="cf">show</span>()</pre>
+    </div>
+
+    <div class="callout callout-info">Si el accuracy de train sube pero el de validación se estanca o baja, hay sobreajuste — justamente lo que se ataca en el Ejercicio 2.</div>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('g-compile', null)"><i class="ti ti-arrow-left"></i> compile y fit</button>
+      <button class="page-nav-btn" onclick="goTo('g-predict', null)">Visualizar predicciones <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO: Visualizar predicciones ──────── -->
+  <div class="page" id="g-predict">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> Visualizar predicciones</div>
+    <h1>Visualizar predicciones</h1>
+    <div class="page-meta"><i class="ti ti-eye"></i> Inspección cualitativa</div>
+
+    <p>En problemas de imágenes conviene mirar ejemplos concretos: graficar varios dígitos junto a la clase predicha y la real ayuda a entender <em>dónde</em> falla el modelo (por ejemplo, confundir 4 con 9). Es el análogo, en MNIST, de graficar una frontera de decisión en 2D.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python</div>
+      <pre><span class="ck">import</span> numpy <span class="ck">as</span> np, matplotlib.pyplot <span class="ck">as</span> plt
+
+y_pred = np.<span class="cf">argmax</span>(model.<span class="cf">predict</span>(X_test), axis=<span class="cs">1</span>)
+
+plt.<span class="cf">figure</span>(figsize=(<span class="cs">10</span>, <span class="cs">4</span>))
+<span class="ck">for</span> i <span class="ck">in</span> <span class="cf">range</span>(<span class="cs">10</span>):
+    plt.<span class="cf">subplot</span>(<span class="cs">2</span>, <span class="cs">5</span>, i + <span class="cs">1</span>)
+    plt.<span class="cf">imshow</span>(X_test[i], cmap=<span class="cs">'gray'</span>)
+    plt.<span class="cf">title</span>(<span class="cs">f"pred {y_pred[i]} / real {y_test[i]}"</span>)
+    plt.<span class="cf">axis</span>(<span class="cs">'off'</span>)
+plt.<span class="cf">show</span>()</pre>
+    </div>
+
+    <div class="callout callout-teal"><strong>Tip:</strong> filtra solo los casos mal clasificados (<code>y_pred != y_test</code>) para inspeccionar los errores más reveladores.</div>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('g-eval', null)"><i class="ti ti-arrow-left"></i> Evaluación</button>
+      <button class="page-nav-btn" onclick="goTo('g-dropout', null)">Dropout y L2 <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO: Dropout y L2 ──────── -->
+  <div class="page" id="g-dropout">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> Dropout y L2</div>
+    <h1>Dropout y regularización L2</h1>
+    <div class="page-meta"><i class="ti ti-droplet-off"></i> Control de sobreajuste</div>
+
+    <p><strong>Dropout</strong> apaga aleatoriamente una fracción de las neuronas en cada paso de entrenamiento, obligando a la red a no depender de neuronas concretas y mejorando la generalización. Se inserta como una capa entre capas densas.</p>
+    <p><strong>Regularización L2</strong> añade a la pérdida una penalización proporcional a la suma de los cuadrados de los pesos, desincentivando pesos grandes. Se aplica por capa con <code>kernel_regularizer</code>.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python</div>
+      <pre><span class="ck">from</span> tensorflow.keras <span class="ck">import</span> Sequential, layers, regularizers
+
+model = <span class="cf">Sequential</span>([
+    layers.<span class="cf">Flatten</span>(input_shape=(<span class="cs">28</span>, <span class="cs">28</span>)),
+    layers.<span class="cf">Dropout</span>(<span class="cs">0.3</span>),                       <span class="cc"># apaga 30% de entradas</span>
+    layers.<span class="cf">Dense</span>(<span class="cs">256</span>, activation=<span class="cs">'relu'</span>,
+                 kernel_regularizer=regularizers.<span class="cf">l2</span>(<span class="cs">1e-4</span>)),
+    layers.<span class="cf">Dropout</span>(<span class="cs">0.2</span>),
+    layers.<span class="cf">Dense</span>(<span class="cs">128</span>, activation=<span class="cs">'relu'</span>),
+    layers.<span class="cf">Dense</span>(<span class="cs">10</span>, activation=<span class="cs">'softmax'</span>)
+])</pre>
+    </div>
+
+    <table class="ref-table">
+      <tr><th>Mecanismo</th><th>Efecto</th></tr>
+      <tr><td><code>Dropout(p)</code></td><td>Apaga una fracción <code>p</code> de neuronas; valores típicos 0.2–0.5</td></tr>
+      <tr><td><code>l2(λ)</code></td><td>Penaliza pesos grandes; λ típico 1e-4 a 1e-2</td></tr>
+    </table>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('g-predict', null)"><i class="ti ti-arrow-left"></i> Visualizar predicciones</button>
+      <button class="page-nav-btn" onclick="goTo('g-early', null)">EarlyStopping <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO: EarlyStopping ──────── -->
+  <div class="page" id="g-early">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> EarlyStopping</div>
+    <h1>EarlyStopping</h1>
+    <div class="page-meta"><i class="ti ti-player-stop"></i> Callback de entrenamiento</div>
+
+    <p>Detiene el entrenamiento automáticamente cuando la métrica de validación deja de mejorar durante varias épocas seguidas. Permite poner un número alto de épocas sin arriesgarse a sobreajustar: el entrenamiento para solo cuando ya no aporta.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python</div>
+      <pre><span class="ck">from</span> tensorflow.keras <span class="ck">import</span> callbacks
+
+early = callbacks.<span class="cf">EarlyStopping</span>(
+    monitor=<span class="cs">'val_loss'</span>,        <span class="cc"># qué vigila</span>
+    patience=<span class="cs">5</span>,                 <span class="cc"># épocas sin mejora antes de parar</span>
+    restore_best_weights=<span class="cs">True</span>   <span class="cc"># vuelve a la mejor época</span>
+)
+
+history = model.<span class="cf">fit</span>(
+    X_train, y_train, epochs=<span class="cs">30</span>, batch_size=<span class="cs">64</span>,
+    validation_split=<span class="cs">0.2</span>, callbacks=[early]
+)</pre>
+    </div>
+
+    <div class="callout callout-warn">La validación se toma del entrenamiento (<code>validation_split</code>), <strong>no</strong> del conjunto de prueba, que se reserva para la evaluación final.</div>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('g-dropout', null)"><i class="ti ti-arrow-left"></i> Dropout y L2</button>
+      <button class="page-nav-btn" onclick="goTo('g-checkpoint', null)">ModelCheckpoint <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ──────── GLOSARIO: ModelCheckpoint ──────── -->
+  <div class="page" id="g-checkpoint">
+    <div class="breadcrumb"><i class="ti ti-book-2"></i> Glosario <i class="ti ti-chevron-right"></i> ModelCheckpoint</div>
+    <h1>ModelCheckpoint</h1>
+    <div class="page-meta"><i class="ti ti-device-floppy"></i> Callback de entrenamiento</div>
+
+    <p>Guarda automáticamente el modelo en disco durante el entrenamiento. Con <code>save_best_only=True</code> conserva únicamente la versión de la mejor época según la métrica vigilada, de modo que al final tienes los mejores pesos aunque épocas posteriores empeoren.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><i class="ti ti-file-code"></i> python</div>
+      <pre><span class="ck">from</span> tensorflow.keras <span class="ck">import</span> callbacks
+
+checkpoint = callbacks.<span class="cf">ModelCheckpoint</span>(
+    <span class="cs">'best_mlp_model.keras'</span>,
+    monitor=<span class="cs">'val_accuracy'</span>,
+    save_best_only=<span class="cs">True</span>
+)
+
+history = model.<span class="cf">fit</span>(
+    X_train, y_train, epochs=<span class="cs">30</span>, batch_size=<span class="cs">64</span>,
+    validation_split=<span class="cs">0.2</span>, callbacks=[early, checkpoint]
+)
+
+<span class="cc"># recuperar el mejor modelo guardado</span>
+best = keras.models.<span class="cf">load_model</span>(<span class="cs">'best_mlp_model.keras'</span>)</pre>
+    </div>
+
+    <table class="ref-table">
+      <tr><th>Argumento</th><th>Rol</th></tr>
+      <tr><td><code>monitor</code></td><td>Métrica que decide cuál época es "la mejor"</td></tr>
+      <tr><td><code>save_best_only</code></td><td>Solo sobrescribe si la métrica mejora</td></tr>
+    </table>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="goTo('g-early', null)"><i class="ti ti-arrow-left"></i> EarlyStopping</button>
+      <button class="page-nav-btn" onclick="goTo('glosario', null)">Índice del glosario <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  function goTo(pageId, triggerBtn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    const match = document.querySelector(`.nav-item[onclick*="'${pageId}'"]`);
+    if (match) match.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+</script>
+</body>
+</html>
